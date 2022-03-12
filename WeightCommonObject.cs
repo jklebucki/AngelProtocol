@@ -1,10 +1,10 @@
 ﻿using System;
-using System.Text;
 using System.IO.Ports;
+using System.Text;
 
 namespace AngelProtocol
 {
-    public class WeightCommonInterface
+    public class WeightCommonObject
     {
         private string response { get; set; }
         private bool endReading { get; set; }
@@ -12,7 +12,7 @@ namespace AngelProtocol
         private ComPortSettings comPortSettings { get; set; }
         public string Message { get; protected set; }
 
-        public WeightCommonInterface(ComPortSettings comPortSettings)
+        public WeightCommonObject(ComPortSettings comPortSettings)
         {
             this.comPortSettings = comPortSettings;
         }
