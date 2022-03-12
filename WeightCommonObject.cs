@@ -149,33 +149,33 @@ namespace AngelProtocol
 
         private decimal ParseResponseApProt(string input)
         {
-            decimal response = 0;
+            decimal result = 0;
             try
             {
-                input = input.Substring(4, 6).Replace(".", ",");
-                response = decimal.Parse(input);
+                var weightResult = input.Substring(4, 6).Replace(".", ",");
+                result = decimal.Parse(weightResult);
             }
             catch
             {
                 //ignore
             }
-            return response;
+            return result;
         }
 
         private decimal ParseResponse(string input)
         {
-            decimal response = 0;
+            decimal result = 0;
             try
             {
                 var decimalPoint = double.Parse(input[2].ToString());
                 var intValue = int.Parse(input.Substring(3, input.Length - 4));
-                response = (decimal)(intValue / (Math.Pow(10, decimalPoint)));
+                result = (decimal)(intValue / (Math.Pow(10, decimalPoint)));
             }
             catch
             {
                 //ignore
             }
-            return response;
+            return result;
         }
     }
 }
