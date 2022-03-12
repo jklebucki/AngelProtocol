@@ -6,6 +6,12 @@ namespace AngelProtocol
 {
     public class WeightCommonObject
     {
+        private static readonly byte[] ENQ = new byte[] { 0x05 };
+        private static readonly byte[] DC1 = new byte[] { 0x11 };
+        //private static readonly byte[] DC2 = new byte[] { 0x12 };
+        private static readonly byte[] STX = new byte[] { 0x05 };
+        private const string ACK = "\u0006";
+        private const string EOT = "\u0004";
         private string response { get; set; }
         private bool endReading { get; set; }
         private bool ackIsRecived { get; set; }
@@ -37,7 +43,6 @@ namespace AngelProtocol
             try
             {
                 serialPort.Open();
-                byte[] STX = new byte[] { 0x05 };
                 serialPort.Write(STX, 0, 1);
                 var start = DateTime.Now.Ticks;
                 while (!endReading)
@@ -81,10 +86,6 @@ namespace AngelProtocol
             try
             {
                 serialPort.Open();
-                byte[] ENQ = new byte[] { 0x05 };
-                byte[] DC1 = new byte[] { 0x11 };
-                byte[] DC2 = new byte[] { 0x12 };
-
                 serialPort.Write(ENQ, 0, 1);
                 var start = DateTime.Now.Ticks;
                 while (!ackIsRecived)
@@ -130,7 +131,7 @@ namespace AngelProtocol
 
         private void SerialPort_ApProtDataReceived(object sender, SerialDataReceivedEventArgs e)
         {
-            var ACK = "\u0006";
+
             SerialPort sp = (SerialPort)sender;
             response += sp.ReadExisting();
             if (response.Contains(ACK))
@@ -138,7 +139,7 @@ namespace AngelProtocol
                 ackIsRecived = true;
                 response = "";
             }
-            var EOT = "\u0004";
+
             if (response.Contains(EOT))
             {
                 sp.Close();
