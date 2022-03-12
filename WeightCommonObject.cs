@@ -12,29 +12,29 @@ namespace AngelProtocol
         private static readonly byte[] STX = new byte[] { 0x05 };
         private const string ACK = "\u0006";
         private const string EOT = "\u0004";
-        private string response { get; set; }
-        private bool endReading { get; set; }
-        private bool ackIsRecived { get; set; }
-        private ComPortSettings comPortSettings { get; set; }
+        private string _response { get; set; }
+        private bool _endReading { get; set; }
+        private bool _ackIsRecived { get; set; }
+        private ComPortSettings _comPortSettings { get; set; }
         public string Message { get; protected set; }
 
         public WeightCommonObject(ComPortSettings comPortSettings)
         {
-            this.comPortSettings = comPortSettings;
+            _comPortSettings = comPortSettings;
         }
 
         public decimal GetWeihgt()
         {
-            response = "";
-            endReading = false;
+            _response = "";
+            _endReading = false;
             decimal parsedResponse = 0M;
             SerialPort serialPort = new SerialPort
             {
-                BaudRate = comPortSettings.BaudRate,
-                PortName = comPortSettings.PortName,
-                StopBits = (StopBits)comPortSettings.StopBits,
-                DataBits = comPortSettings.DataBits,
-                Parity = (Parity)comPortSettings.Parity,
+                BaudRate = _comPortSettings.BaudRate,
+                PortName = _comPortSettings.PortName,
+                StopBits = (StopBits)_comPortSettings.StopBits,
+                DataBits = _comPortSettings.DataBits,
+                Parity = (Parity)_comPortSettings.Parity,
                 Encoding = Encoding.ASCII,
                 Handshake = Handshake.None
             };
@@ -45,7 +45,7 @@ namespace AngelProtocol
                 serialPort.Open();
                 serialPort.Write(STX, 0, 1);
                 var start = DateTime.Now.Ticks;
-                while (!endReading)
+                while (!_endReading)
                 {
                     var end = DateTime.Now.Ticks;
                     if (end > (start + 10000000))
@@ -54,7 +54,7 @@ namespace AngelProtocol
                         break;
                     }
                 }
-                char[] charArray = response.ToCharArray();
+                char[] charArray = _response.ToCharArray();
                 Array.Reverse(charArray);
                 parsedResponse = ParseResponse(new string(charArray));
             }
@@ -68,16 +68,16 @@ namespace AngelProtocol
 
         public decimal GetWeihgtApProt()
         {
-            response = "";
-            endReading = false;
+            _response = "";
+            _endReading = false;
             decimal parsedResponse = 0M;
             SerialPort serialPort = new SerialPort
             {
-                BaudRate = comPortSettings.BaudRate,
-                PortName = comPortSettings.PortName,
-                StopBits = (StopBits)comPortSettings.StopBits,
-                DataBits = comPortSettings.DataBits,
-                Parity = (Parity)comPortSettings.Parity,
+                BaudRate = _comPortSettings.BaudRate,
+                PortName = _comPortSettings.PortName,
+                StopBits = (StopBits)_comPortSettings.StopBits,
+                DataBits = _comPortSettings.DataBits,
+                Parity = (Parity)_comPortSettings.Parity,
                 Encoding = Encoding.ASCII,
                 Handshake = Handshake.None
             };
@@ -88,7 +88,7 @@ namespace AngelProtocol
                 serialPort.Open();
                 serialPort.Write(ENQ, 0, 1);
                 var start = DateTime.Now.Ticks;
-                while (!ackIsRecived)
+                while (!_ackIsRecived)
                 {
                     var end = DateTime.Now.Ticks;
                     if (end > (start + 15000000)) //wait 1.5 sec for ACK
@@ -98,7 +98,7 @@ namespace AngelProtocol
                     }
                 }
                 serialPort.Write(DC1, 0, 1);
-                while (!endReading)
+                while (!_endReading)
                 {
                     var end = DateTime.Now.Ticks;
                     if (end > (start + 10000000)) //wait 1 sec for DC1 response
@@ -107,7 +107,7 @@ namespace AngelProtocol
                         return parsedResponse;
                     }
                 }
-                char[] charArray = response.ToCharArray();
+                char[] charArray = _response.ToCharArray();
                 parsedResponse = ParseResponseApProt(new string(charArray));
             }
             catch (Exception ex)
@@ -121,11 +121,11 @@ namespace AngelProtocol
         private void SerialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
             SerialPort sp = (SerialPort)sender;
-            response += sp.ReadExisting();
-            if (response.Contains("\u0003"))
+            _response += sp.ReadExisting();
+            if (_response.Contains("\u0003"))
             {
                 sp.Close();
-                endReading = true;
+                _endReading = true;
             }
         }
 
@@ -133,17 +133,17 @@ namespace AngelProtocol
         {
 
             SerialPort sp = (SerialPort)sender;
-            response += sp.ReadExisting();
-            if (response.Contains(ACK))
+            _response += sp.ReadExisting();
+            if (_response.Contains(ACK))
             {
-                ackIsRecived = true;
-                response = "";
+                _ackIsRecived = true;
+                _response = "";
             }
 
-            if (response.Contains(EOT))
+            if (_response.Contains(EOT))
             {
                 sp.Close();
-                endReading = true;
+                _endReading = true;
             }
         }
 
