@@ -8,10 +8,11 @@ namespace AngelProtocol
     {
         private static readonly byte[] ENQ = new byte[] { 0x05 };
         private static readonly byte[] DC1 = new byte[] { 0x11 };
-        //private static readonly byte[] DC2 = new byte[] { 0x12 };
         private static readonly byte[] STX = new byte[] { 0x05 };
-        private const string ACK = "\u0006";
+        private const string EXT = "\u0003";
         private const string EOT = "\u0004";
+        private const string ACK = "\u0006";
+
         private string _response { get; set; }
         private bool _endReading { get; set; }
         private bool _ackIsRecived { get; set; }
@@ -23,11 +24,10 @@ namespace AngelProtocol
             _comPortSettings = comPortSettings;
         }
 
-        public decimal GetWeihgt()
+        public decimal GetWeihgtBasicProtocol()
         {
             _response = "";
             _endReading = false;
-            decimal parsedResponse = 0M;
             SerialPort serialPort = new SerialPort
             {
                 BaudRate = _comPortSettings.BaudRate,
@@ -39,7 +39,7 @@ namespace AngelProtocol
                 Handshake = Handshake.None
             };
 
-            serialPort.DataReceived += new SerialDataReceivedEventHandler(SerialPort_DataReceived);
+            serialPort.DataReceived += new SerialDataReceivedEventHandler(SerialPort_DataReceivedBasicProtocol);
             try
             {
                 serialPort.Open();
@@ -56,21 +56,19 @@ namespace AngelProtocol
                 }
                 char[] charArray = _response.ToCharArray();
                 Array.Reverse(charArray);
-                parsedResponse = ParseResponse(new string(charArray));
+                return ParseWeightResultBasicProtocol(new string(charArray));
             }
             catch (Exception ex)
             {
                 Message = ex.Message;
+                return 0;
             }
-
-            return parsedResponse;
         }
 
-        public decimal GetWeihgtApProt()
+        public decimal GetWeihgtAngelProtocol()
         {
             _response = "";
             _endReading = false;
-            decimal parsedResponse = 0M;
             SerialPort serialPort = new SerialPort
             {
                 BaudRate = _comPortSettings.BaudRate,
@@ -82,7 +80,7 @@ namespace AngelProtocol
                 Handshake = Handshake.None
             };
 
-            serialPort.DataReceived += new SerialDataReceivedEventHandler(SerialPort_ApProtDataReceived);
+            serialPort.DataReceived += new SerialDataReceivedEventHandler(SerialPort_DataReceivedAngelProtocol);
             try
             {
                 serialPort.Open();
@@ -94,7 +92,7 @@ namespace AngelProtocol
                     if (end > (start + 15000000)) //wait 1.5 sec for ACK
                     {
                         serialPort.Close();
-                        return parsedResponse;
+                        return 0;
                     }
                 }
                 serialPort.Write(DC1, 0, 1);
@@ -104,34 +102,32 @@ namespace AngelProtocol
                     if (end > (start + 10000000)) //wait 1 sec for DC1 response
                     {
                         serialPort.Close();
-                        return parsedResponse;
+                        return 0;
                     }
                 }
                 char[] charArray = _response.ToCharArray();
-                parsedResponse = ParseResponseApProt(new string(charArray));
+                return ParseWeightResultAngelProtocol(new string(charArray));
             }
             catch (Exception ex)
             {
                 Message = ex.Message;
+                return 0;
             }
-
-            return parsedResponse;
         }
 
-        private void SerialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
+        private void SerialPort_DataReceivedBasicProtocol(object sender, SerialDataReceivedEventArgs e)
         {
             SerialPort sp = (SerialPort)sender;
             _response += sp.ReadExisting();
-            if (_response.Contains("\u0003"))
+            if (_response.Contains(EXT))
             {
                 sp.Close();
                 _endReading = true;
             }
         }
 
-        private void SerialPort_ApProtDataReceived(object sender, SerialDataReceivedEventArgs e)
+        private void SerialPort_DataReceivedAngelProtocol(object sender, SerialDataReceivedEventArgs e)
         {
-
             SerialPort sp = (SerialPort)sender;
             _response += sp.ReadExisting();
             if (_response.Contains(ACK))
@@ -147,35 +143,31 @@ namespace AngelProtocol
             }
         }
 
-        private decimal ParseResponseApProt(string input)
+        private decimal ParseWeightResultAngelProtocol(string input)
         {
-            decimal result = 0;
             try
             {
                 var weightResult = input.Substring(4, 6).Replace(".", ",");
-                result = decimal.Parse(weightResult);
+                return decimal.Parse(weightResult);
             }
             catch
             {
-                //ignore
+                return 0;
             }
-            return result;
         }
 
-        private decimal ParseResponse(string input)
+        private decimal ParseWeightResultBasicProtocol(string input)
         {
-            decimal result = 0;
             try
             {
                 var decimalPoint = double.Parse(input[2].ToString());
                 var intValue = int.Parse(input.Substring(3, input.Length - 4));
-                result = (decimal)(intValue / (Math.Pow(10, decimalPoint)));
+                return (decimal)(intValue / (Math.Pow(10, decimalPoint)));
             }
             catch
             {
-                //ignore
+                return 0;
             }
-            return result;
         }
     }
 }
